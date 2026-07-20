@@ -1,0 +1,124 @@
+<div class="dashboard-container">
+  
+  <!-- Metrics Bar -->
+  <div class="metrics-grid">
+    <div class="metric-card glass">
+      <span class="metric-label">All Documents</span>
+      <span class="metric-value">{{ totalCount() }}</span>
+    </div>
+    <div class="metric-card glass">
+      <span class="metric-label">Completed Indexes</span>
+      <span class="metric-value text-success">{{ completedCount() }}</span>
+    </div>
+    <div class="metric-card glass">
+      <span class="metric-label">Processing</span>
+      <span class="metric-value text-info pulsing">{{ processingCount() }}</span>
+    </div>
+    <div class="metric-card glass">
+      <span class="metric-label">Failed</span>
+      <span class="metric-value text-danger">{{ failedCount() }}</span>
+    </div>
+  </div>
+
+  <!-- Main Layout: Upload and Document list -->
+  <div class="workspace-grid">
+    
+    <!-- Left: Upload Card -->
+    <div class="upload-section glass">
+      <h3 class="section-title">Upload Knowledge File</h3>
+      <p class="section-desc">Add raw txt, md, or PDF files. AI will auto-summarize, extract keywords, and generate vector embeddings.</p>
+      
+      <div 
+        class="drop-zone"
+        [class.drag-over]="isDragOver()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop($event)"
+        (click)="fileInput.click()"
+      >
+        <input 
+          type="file" 
+          #fileInput 
+          style="display: none" 
+          (change)="onFileSelected($event)" 
+          accept=".txt,.md,.pdf"
+        />
+        <span class="drop-icon">☁️</span>
+        <span class="drop-text">Drag and drop file here or click to browse</span>
+        <span class="drop-hint">Supported formats: .txt, .md, .pdf (Max 10MB)</span>
+      </div>
+
+      @if (uploadingFile()) {
+        <div class="upload-loader">
+          <span class="spinner"></span>
+          <span>Uploading and staging "{{ uploadingFile() }}"...</span>
+        </div>
+      }
+
+      @if (uploadError()) {
+        <div class="upload-error">{{ uploadError() }}</div>
+      }
+    </div>
+
+    <!-- Right: Document List -->
+    <div class="list-section">
+      <div class="list-header">
+        <h3 class="section-title">Document Repository</h3>
+        
+        <!-- Real-time RxJS Search Input -->
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            class="form-input search-input" 
+            placeholder="Search by title or tag..." 
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange($event)"
+          />
+        </div>
+      </div>
+
+      @if (isLoading()) {
+        <div class="list-loader">
+          <span class="spinner"></span>
+          <span>Loading documents...</span>
+        </div>
+      } @else if (documents.length === 0) {
+        <div class="empty-state glass">
+          <span class="empty-icon">📂</span>
+          <h4>No Documents Stored</h4>
+          <p>Upload a text document or PDF file to start seeding your AI knowledge base.</p>
+        </div>
+      } @else {
+        <div class="document-grid">
+          @for (doc of documents; track doc.id) {
+            <div class="document-card glass glass-hover" [routerLink]="['/documents', doc.id]">
+              <div class="card-top">
+                <span class="file-icon">{{ getFileIcon(doc.file_type) }}</span>
+                <span class="badge" [class]="getBadgeClass(doc.status)">{{ doc.status }}</span>
+              </div>
+              
+              <h4 class="doc-title" [title]="doc.title">{{ doc.title }}</h4>
+              
+              <p class="doc-summary-preview">
+                {{ doc.summary || 'Summary pending AI parsing...' }}
+              </p>
+
+              <div class="doc-tags">
+                @for (tag of doc.tags; track tag) {
+                  <span class="tag-pill">{{ tag }}</span>
+                }
+              </div>
+
+              <div class="card-footer">
+                <span class="doc-date">Added {{ doc.created_at | date:'MMM d, y, h:mm a' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+  </div>
+
+</div>

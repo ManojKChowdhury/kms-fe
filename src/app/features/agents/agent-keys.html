@@ -1,0 +1,95 @@
+<div class="keys-container">
+  
+  <div class="header-section">
+    <h2 class="page-title gradient-text">AI Agent Credentials</h2>
+    <p class="page-desc">Generate secure API keys to grant external scripts, LLMs, or autonomous AI agents access to your knowledge base vector indices.</p>
+  </div>
+
+  <!-- Key Generation Box -->
+  <div class="generation-card glass">
+    <h3 class="card-title">Provision New API Key</h3>
+    <form (ngSubmit)="generateKey()" class="gen-form">
+      <div class="form-group flex-grow-1">
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="e.g., Python RAG Agent, Slack Connector"
+          [(ngModel)]="newKeyName"
+          name="keyName"
+          required
+          [disabled]="isGenerating()"
+        />
+      </div>
+      <button type="submit" class="btn btn-primary" [disabled]="!newKeyName.trim() || isGenerating()">
+        {{ isGenerating() ? 'Generating...' : '🔑 Create Key' }}
+      </button>
+    </form>
+
+    <!-- Plaintext Key Warning (Shown ONLY Once upon creation) -->
+    @if (newlyCreatedKey()) {
+      <div class="secret-warning-box">
+        <div class="warning-header">
+          <span class="warning-icon">⚠️</span>
+          <h4>Save this Key!</h4>
+        </div>
+        <p class="warning-desc">For security reasons, this key will not be shown again. Copy it now and store it in a secure password manager or environment file.</p>
+        
+        <div class="key-copy-container">
+          <code class="secret-key-display">{{ newlyCreatedKey() }}</code>
+          <button class="btn btn-secondary btn-sm" (click)="copyToClipboard(newlyCreatedKey()!)">
+            {{ isCopied() ? 'Copied! ✓' : '📋 Copy' }}
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Active Keys Table & Curl Preview -->
+  <div class="layout-grid">
+    
+    <!-- Left: API Keys List -->
+    <div class="keys-list-card glass flex-col">
+      <h3 class="card-title">Active Credentials</h3>
+      
+      @if (isLoading()) {
+        <div class="loader-box">
+          <span class="spinner"></span>
+          <span>Loading credentials...</span>
+        </div>
+      } @else if (keys().length === 0) {
+        <div class="empty-state-small">
+          <span>📭</span>
+          <p>No active API keys found. Create a credential above to connect external services.</p>
+        </div>
+      } @else {
+        <div class="keys-list">
+          @for (key of keys(); track key.id) {
+            <div class="key-item">
+              <div class="key-info">
+                <span class="key-name">{{ key.name }}</span>
+                <span class="key-meta">Created {{ key.created_at | date:'mediumDate' }} • Prefix: <code>kms_...</code></span>
+              </div>
+              <button class="btn btn-danger btn-sm" (click)="revokeKey(key.id)">Revoke</button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Right: Curl Code Sandbox -->
+    <div class="curl-card glass">
+      <h3 class="card-title">Developer Integration</h3>
+      <p class="card-desc">Call the Knowledge Base RAG router externally by passing your API Key in the <code>X-API-Key</code> request header.</p>
+      
+      <div class="code-header">
+        <span class="code-lang">CURL REQUEST</span>
+        <button class="copy-code-btn" (click)="copyToClipboard(curlCommand)">
+          {{ isCurlCopied() ? 'Copied!' : 'Copy Code' }}
+        </button>
+      </div>
+      <pre class="code-preview"><code>{{ curlCommand }}</code></pre>
+    </div>
+
+  </div>
+
+</div>

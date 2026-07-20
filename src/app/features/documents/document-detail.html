@@ -1,0 +1,166 @@
+<div class="detail-container">
+  
+  <!-- Top Action Bar -->
+  <div class="action-bar">
+    <a routerLink="/dashboard" class="btn btn-secondary flex-center">
+      <span>← Back to Documents</span>
+    </a>
+    <div class="actions-right">
+      <button class="btn btn-danger" (click)="deleteDocument()" [disabled]="isDeleting()">
+        {{ isDeleting() ? 'Deleting...' : '🗑️ Delete Document' }}
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="center-loader">
+      <span class="spinner"></span>
+      <span>Fetching document detail...</span>
+    </div>
+  } @else if (doc()) {
+    <div class="layout-grid">
+      
+      <!-- Left Pane: Content, summary and tag editor -->
+      <div class="left-pane flex-col gap-15">
+        
+        <!-- Metadata and Tags -->
+        <div class="pane-card glass">
+          <div class="meta-row">
+            <span class="file-icon-large">{{ getFileIcon(doc()!.file_type) }}</span>
+            <div class="meta-info">
+              <h2 class="doc-title" [title]="doc()!.title">{{ doc()!.title }}</h2>
+              <span class="doc-meta-text">Added on {{ doc()!.created_at | date:'medium' }}</span>
+            </div>
+            <span class="badge" [class]="getBadgeClass(doc()!.status)">{{ doc()!.status }}</span>
+          </div>
+
+          <!-- Tags list / Editor -->
+          <div class="tag-section">
+            <span class="tag-label">Tags:</span>
+            
+            @if (isEditingTags()) {
+              <div class="tag-edit-form">
+                <input 
+                  type="text" 
+                  class="form-input tag-input" 
+                  [(ngModel)]="editTagsString" 
+                  placeholder="comma, separated, tags"
+                />
+                <button class="btn btn-primary btn-sm" (click)="saveTags()">Save</button>
+                <button class="btn btn-secondary btn-sm" (click)="cancelEditTags()">Cancel</button>
+              </div>
+            } @else {
+              <div class="tag-list">
+                @for (tag of doc()!.tags; track tag) {
+                  <span class="tag-pill">{{ tag }}</span>
+                }
+                <button class="edit-tags-btn" (click)="startEditTags()">✏️ Edit</button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Summary section -->
+        <div class="pane-card glass">
+          <h3 class="section-title">AI Summary</h3>
+          <div class="summary-body">
+            @if (doc()!.status !== 'completed') {
+              <p class="summary-pending">Summary is pending. Wait until AI document indexing is complete.</p>
+            } @else {
+              <p class="summary-text">{{ doc()!.summary }}</p>
+            }
+          </div>
+        </div>
+
+        <!-- Full Text Reader -->
+        <div class="pane-card glass flex-grow-1 flex-col overflow-hidden">
+          <h3 class="section-title">Full Document Text</h3>
+          <div class="content-body scroll-y flex-grow-1">
+            <pre class="raw-content">{{ doc()!.content }}</pre>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Pane: AI Chatbot Q&A -->
+      <div class="right-pane glass flex-col overflow-hidden">
+        <div class="chat-header">
+          <h3 class="chat-title">Query this Document</h3>
+          <p class="chat-subtitle">Ask questions specifically scoped to this file's vector embeddings.</p>
+        </div>
+
+        <!-- Chat messages stream -->
+        <div class="chat-messages scroll-y flex-grow-1" #chatScrollContainer>
+          @if (messages.length === 0) {
+            <div class="chat-empty">
+              <span>🤖</span>
+              <p>Ask a question about the contents of this document. The AI will query relevant vector chunks to formulate a response.</p>
+            </div>
+          } @else {
+            @for (msg of messages; track $index) {
+              <div class="chat-bubble-wrapper" [class.user-msg]="msg.sender === 'user'">
+                <div class="chat-avatar">{{ msg.sender === 'user' ? '👤' : '🤖' }}</div>
+                <div class="chat-bubble">
+                  <div class="bubble-text">{{ msg.text }}</div>
+                  
+                  <!-- Citations list -->
+                  @if (msg.sources && msg.sources.length > 0) {
+                    <div class="citations">
+                      <span class="citation-title">Sources used:</span>
+                      <div class="citation-links">
+                        @for (src of msg.sources; track $index) {
+                          <span class="citation-item" [title]="'Score: ' + src.similarity_score">
+                            Chunk #{{ src.chunk_index }} ({{ src.similarity_score * 100 | number:'1.0-1' }}% Match)
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  }
+                  <span class="bubble-time">{{ msg.timestamp | date:'h:mm a' }}</span>
+                </div>
+              </div>
+            }
+
+            @if (isGenerating()) {
+              <div class="chat-bubble-wrapper">
+                <div class="chat-avatar">🤖</div>
+                <div class="chat-bubble typing-bubble">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Chat input bar -->
+        <form (ngSubmit)="sendQuestion()" class="chat-input-bar">
+          <input 
+            type="text" 
+            class="form-input chat-input" 
+            placeholder="Ask something about this document..."
+            [(ngModel)]="currentQuestion"
+            name="question"
+            [disabled]="isGenerating() || doc()?.status !== 'completed'"
+          />
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="!currentQuestion.trim() || isGenerating() || doc()?.status !== 'completed'"
+          >
+            Send
+          </button>
+        </form>
+      </div>
+
+    </div>
+  } @else {
+    <div class="empty-state glass">
+      <span>❌</span>
+      <h4>Document Not Found</h4>
+      <p>The requested file does not exist or you do not have permission to view it.</p>
+    </div>
+  }
+
+</div>

@@ -1,12 +1,22 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
+import { WebSocketService } from './core/services/websocket.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  standalone: true,
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class App {
-  protected readonly title = signal('frontend');
+  readonly authService = inject(AuthService);
+  readonly wsService = inject(WebSocketService);
+
+  toggleTheme() {
+    const currentTheme = this.authService.userPreferences().theme;
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    this.authService.updatePreferences({ theme: newTheme }).subscribe();
+  }
 }

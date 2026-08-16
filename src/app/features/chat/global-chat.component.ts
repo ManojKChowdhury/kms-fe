@@ -15,8 +15,8 @@ interface ChatMessage {
   selector: 'app-global-chat',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
-  templateUrl: './global-chat.html',
-  styleUrl: './global-chat.scss'
+  templateUrl: './global-chat.component.html',
+  styleUrl: './global-chat.component.scss'
 })
 export class GlobalChatComponent {
   private docService = inject(DocumentService);

@@ -7,8 +7,8 @@ import { AgentService, AgentKey } from '../../core/services/agent.service';
   selector: 'app-agent-keys',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './agent-keys.html',
-  styleUrl: './agent-keys.scss'
+  templateUrl: './agent-keys.component.html',
+  styleUrl: './agent-keys.component.scss'
 })
 export class AgentKeysComponent implements OnInit {
   private agentService = inject(AgentService);

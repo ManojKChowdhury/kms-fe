@@ -10,8 +10,8 @@ import { WebSocketService } from '../../core/services/websocket.service';
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
-  templateUrl: './dashboard.html',
-  styleUrl: './dashboard.scss'
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private docService = inject(DocumentService);

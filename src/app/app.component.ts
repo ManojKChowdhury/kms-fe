@@ -7,8 +7,8 @@ import { WebSocketService } from './core/services/websocket.service';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css'
 })
 export class App {
   readonly authService = inject(AuthService);

@@ -17,8 +17,8 @@ interface ChatMessage {
   selector: 'app-document-detail',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
-  templateUrl: './document-detail.html',
-  styleUrl: './document-detail.scss'
+  templateUrl: './document-detail.component.html',
+  styleUrl: './document-detail.component.scss'
 })
 export class DocumentDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

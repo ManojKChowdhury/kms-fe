@@ -11,13 +11,13 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="login-wrapper">
       <div class="glow-bg"></div>
       <div class="login-card glass">
-        <h2 class="login-title gradient-text">{{ mode() === 'register' ? 'Create Account' : 'Welcome Back' }}</h2>
+        <h2 class="login-title gradient-text">{{ mode() === 'register' ? 'Create Account' : 'Login' }}</h2>
         <p class="login-subtitle">AI-Powered Knowledge Management System</p>
-        
+
         @if (errorMessage()) {
           <div class="error-banner">{{ errorMessage() }}</div>
         }
-        
+
         @if (successMessage()) {
           <div class="success-banner">{{ successMessage() }}</div>
         }
@@ -25,32 +25,32 @@ import { AuthService } from '../../core/services/auth.service';
         <form [formGroup]="form" (ngSubmit)="onSubmit()" #loginForm="ngForm">
           <div class="form-group">
             <label class="form-label" for="email">Email Address</label>
-            <input 
-              type="email" 
-              id="email" 
-              name="email" 
-              class="form-input" 
-              formControlName="email" 
-              required 
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-input"
+              formControlName="email"
+              required
               email
               placeholder="name@company.com"
             />
           </div>
-          
+
           <div class="form-group">
             <label class="form-label" for="password">Password</label>
-            <input 
-              type="password" 
-              id="password" 
-              name="password" 
-              class="form-input" 
-              formControlName="password" 
-              required 
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              formControlName="password"
+              required
               minlength="6"
               placeholder="••••••••"
             />
           </div>
-          
+
           <button type="submit" class="btn btn-primary login-btn" [disabled]="loginForm.invalid || isLoading()">
             {{ isLoading() ? 'Processing...' : (mode() === 'register' ? 'Sign Up' : 'Sign In') }}
           </button>
@@ -107,9 +107,6 @@ import { AuthService } from '../../core/services/auth.service';
       text-align: center;
       margin-bottom: 0.5rem;
       font-family: var(--font-family-heading);
-      background: var(--gradient-text);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
     }
 
     .login-subtitle {

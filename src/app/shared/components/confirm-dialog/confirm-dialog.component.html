@@ -1,0 +1,29 @@
+@if (confirmService.request(); as req) {
+  <div class="dialog-backdrop" (click)="confirmService.dismiss()">
+    <div
+      class="dialog-card glass"
+      role="alertdialog"
+      aria-modal="true"
+      [attr.aria-label]="req.title"
+      (click)="$event.stopPropagation()"
+    >
+      <h3 class="dialog-title">{{ req.title }}</h3>
+      <p class="dialog-message">{{ req.message }}</p>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-secondary" (click)="confirmService.dismiss()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          #confirmButton
+          class="btn"
+          [class.btn-danger]="req.danger !== false"
+          [class.btn-primary]="req.danger === false"
+          (click)="confirmService.accept()"
+        >
+          {{ req.confirmLabel || 'Confirm' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

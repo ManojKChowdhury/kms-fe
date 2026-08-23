@@ -9,7 +9,7 @@ import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confi
   selector: 'app-root',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, ConfirmDialogComponent],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styleUrl: './app.component.scss'
 })
 export class App {
   readonly authService = inject(AuthService);

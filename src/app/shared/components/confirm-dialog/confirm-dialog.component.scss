@@ -1,0 +1,36 @@
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 1.5rem;
+}
+
+.dialog-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 1.75rem;
+  background: var(--bg-secondary);
+}
+
+.dialog-title {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+}
+
+.dialog-message {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}

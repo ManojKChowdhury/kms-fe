@@ -7,7 +7,7 @@ describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [{ provide: ENVIRONMENT_TOKEN, useValue: environment }]
+      providers: [{ provide: ENVIRONMENT_TOKEN, useValue: environment }],
     }).compileComponents();
   });
 

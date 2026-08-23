@@ -12,7 +12,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: unknown) => {
-      const isPublicRequest = PUBLIC_ENDPOINTS.some(path => req.url.includes(path));
+      const isPublicRequest = PUBLIC_ENDPOINTS.some((path) => req.url.includes(path));
 
       if (error instanceof HttpErrorResponse) {
         if (error.status === 401 && !isPublicRequest) {
@@ -26,6 +26,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       return throwError(() => error);
-    })
+    }),
   );
 };

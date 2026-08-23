@@ -2,7 +2,14 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { BehaviorSubject, Subscription, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  Subscription,
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { Document, DocumentService } from '../../core/services/document.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { FileIconPipe } from '../../shared/pipes/file-icon.pipe';
@@ -12,7 +19,7 @@ import { StatusBadgePipe } from '../../shared/pipes/status-badge.pipe';
   selector: 'app-dashboard',
   imports: [DatePipe, RouterLink, FormsModule, FileIconPipe, StatusBadgePipe],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private docService = inject(DocumentService);
@@ -22,11 +29,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // Reactive dashboard metrics derived directly from the documents signal
   readonly totalCount = computed(() => this.documents().length);
-  readonly completedCount = computed(() => this.documents().filter(d => d.status === 'completed').length);
-  readonly processingCount = computed(() =>
-    this.documents().filter(d => d.status === 'processing' || d.status === 'pending').length
+  readonly completedCount = computed(
+    () => this.documents().filter((d) => d.status === 'completed').length,
   );
-  readonly failedCount = computed(() => this.documents().filter(d => d.status === 'failed').length);
+  readonly processingCount = computed(
+    () =>
+      this.documents().filter((d) => d.status === 'processing' || d.status === 'pending').length,
+  );
+  readonly failedCount = computed(
+    () => this.documents().filter((d) => d.status === 'failed').length,
+  );
 
   // Search properties
   searchQuery = '';
@@ -42,22 +54,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     // 1. Core RxJS Stream: debounce input search and switchMap to fetch
-    const searchSub = this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      tap(() => this.isLoading.set(true)),
-      switchMap(term => this.docService.getDocuments(term))
-    ).subscribe({
-      next: (docs) => {
-        this.documents.set(docs);
-        this.isLoading.set(false);
-      },
-      error: () => this.isLoading.set(false)
-    });
+    const searchSub = this.searchSubject
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        tap(() => this.isLoading.set(true)),
+        switchMap((term) => this.docService.getDocuments(term)),
+      )
+      .subscribe({
+        next: (docs) => {
+          this.documents.set(docs);
+          this.isLoading.set(false);
+        },
+        error: () => this.isLoading.set(false),
+      });
     this.subs.add(searchSub);
 
     // 2. Real-time WebSocket connection to refresh status on processing events
-    const wsSub = this.wsService.messages$.subscribe(msg => {
+    const wsSub = this.wsService.messages$.subscribe((msg) => {
       if (msg.event === 'doc_status') {
         this.refreshDocuments();
       }
@@ -130,7 +144,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.uploadingFile.set(null);
         this.uploadError.set(err.error?.detail || 'An error occurred during file upload.');
-      }
+      },
     });
   }
 }

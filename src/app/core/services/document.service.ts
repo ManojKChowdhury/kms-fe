@@ -31,7 +31,7 @@ export interface ChatResponse {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DocumentService {
   private readonly apiUrl = 'http://localhost:8000/api/v1/documents';
@@ -65,16 +65,10 @@ export class DocumentService {
   }
 
   askDocumentQuestion(id: number, question: string): Observable<ChatResponse> {
-    return this.http.post<ChatResponse>(
-      `${this.apiUrl}/${id}/chat`,
-      { question }
-    );
+    return this.http.post<ChatResponse>(`${this.apiUrl}/${id}/chat`, { question });
   }
 
   askGlobalQuestion(question: string): Observable<ChatResponse> {
-    return this.http.post<ChatResponse>(
-      `${this.apiUrl}/chat`,
-      { question }
-    );
+    return this.http.post<ChatResponse>(`${this.apiUrl}/chat`, { question });
   }
 }

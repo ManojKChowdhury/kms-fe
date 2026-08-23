@@ -72,7 +72,7 @@ export class WebSocketService implements OnDestroy {
           console.log('[WebSocket] Connection established');
           this.reconnectAttempts = 0;
           this.connected.set(true);
-        }
+        },
       },
       closeObserver: {
         next: () => {
@@ -84,13 +84,13 @@ export class WebSocketService implements OnDestroy {
           if (this.authService.isAuthenticated()) {
             this.scheduleReconnect();
           }
-        }
-      }
+        },
+      },
     });
 
     this.socket$.subscribe({
-      next: msg => this.messagesSubject.next(msg),
-      error: err => console.error('[WebSocket] Error:', err)
+      next: (msg) => this.messagesSubject.next(msg),
+      error: (err) => console.error('[WebSocket] Error:', err),
     });
   }
 
@@ -108,7 +108,7 @@ export class WebSocketService implements OnDestroy {
 
     const delayMs = Math.min(
       BASE_RECONNECT_DELAY_MS * 2 ** this.reconnectAttempts,
-      MAX_RECONNECT_DELAY_MS
+      MAX_RECONNECT_DELAY_MS,
     );
     this.reconnectAttempts++;
 

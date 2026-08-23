@@ -16,7 +16,7 @@ import { ChatPanelComponent } from '../../shared/components/chat-panel/chat-pane
   selector: 'app-document-detail',
   imports: [DatePipe, RouterLink, FormsModule, FileIconPipe, StatusBadgePipe, ChatPanelComponent],
   templateUrl: './document-detail.component.html',
-  styleUrl: './document-detail.component.scss'
+  styleUrl: './document-detail.component.scss',
 })
 export class DocumentDetailComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
@@ -28,8 +28,8 @@ export class DocumentDetailComponent implements OnDestroy {
 
   // Reactive route param: reloads details whenever :id changes.
   private readonly docId = toSignal(
-    this.route.paramMap.pipe(map(params => Number(params.get('id')))),
-    { initialValue: 0 }
+    this.route.paramMap.pipe(map((params) => Number(params.get('id')))),
+    { initialValue: 0 },
   );
 
   doc = signal<DocumentDetail | null>(null);
@@ -54,16 +54,16 @@ export class DocumentDetailComponent implements OnDestroy {
     this.subs.add(
       toObservable(this.docId)
         .pipe(tap(() => this.loadDocumentDetails()))
-        .subscribe()
+        .subscribe(),
     );
 
     // Handle WebSocket broadcasts for live document updates
     this.subs.add(
-      this.wsService.messages$.subscribe(msg => {
+      this.wsService.messages$.subscribe((msg) => {
         if (msg.event === 'doc_status' && msg.doc_id === this.docId()) {
           this.loadDocumentDetails();
         }
-      })
+      }),
     );
   }
 
@@ -82,15 +82,16 @@ export class DocumentDetailComponent implements OnDestroy {
       },
       error: () => {
         this.isLoading.set(false);
-      }
+      },
     });
   }
 
   async deleteDocument() {
     const confirmed = await this.confirm.confirm({
       title: 'Delete document?',
-      message: 'This will remove the document along with all summaries, tags and vector index chunks permanently.',
-      confirmLabel: 'Delete'
+      message:
+        'This will remove the document along with all summaries, tags and vector index chunks permanently.',
+      confirmLabel: 'Delete',
     });
     if (!confirmed) return;
 
@@ -104,7 +105,7 @@ export class DocumentDetailComponent implements OnDestroy {
       error: () => {
         this.isDeleting.set(false);
         this.toast.error('Failed to delete document.');
-      }
+      },
     });
   }
 
@@ -120,9 +121,10 @@ export class DocumentDetailComponent implements OnDestroy {
   }
 
   saveTags() {
-    const list = this.editTagsString.split(',')
-      .map(t => t.trim().toLowerCase())
-      .filter(t => t.length > 0);
+    const list = this.editTagsString
+      .split(',')
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t.length > 0);
 
     this.docService.updateTags(this.docId(), list).subscribe({
       next: (updatedDoc) => {
@@ -130,7 +132,7 @@ export class DocumentDetailComponent implements OnDestroy {
         if (current) {
           this.doc.set({
             ...current,
-            tags: updatedDoc.tags
+            tags: updatedDoc.tags,
           });
         }
         this.isEditingTags.set(false);
@@ -138,7 +140,7 @@ export class DocumentDetailComponent implements OnDestroy {
       },
       error: () => {
         this.toast.error('Failed to update tags.');
-      }
+      },
     });
   }
 }

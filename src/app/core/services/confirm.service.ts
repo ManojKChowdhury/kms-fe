@@ -18,7 +18,7 @@ export class ConfirmService {
   readonly request = this.pendingSignal.asReadonly();
 
   confirm(options: ConfirmOptions): Promise<boolean> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.pendingSignal.set({ ...options, resolve });
     });
   }

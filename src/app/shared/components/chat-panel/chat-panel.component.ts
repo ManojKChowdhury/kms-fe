@@ -21,7 +21,7 @@ export interface ChatMessage {
   selector: 'app-chat-panel',
   imports: [DatePipe, DecimalPipe, FormsModule, RouterLink],
   templateUrl: './chat-panel.component.html',
-  styleUrl: './chat-panel.component.scss'
+  styleUrl: './chat-panel.component.scss',
 })
 export class ChatPanelComponent {
   /** Handler performing the actual question round-trip. */
@@ -43,31 +43,28 @@ export class ChatPanelComponent {
     const q = this.question().trim();
     if (!q || this.isGenerating() || this.disabled()) return;
 
-    this.messages.update(list => [
-      ...list,
-      { sender: 'user', text: q, timestamp: new Date() }
-    ]);
+    this.messages.update((list) => [...list, { sender: 'user', text: q, timestamp: new Date() }]);
     this.question.set('');
     this.isGenerating.set(true);
     this.scrollToBottom();
 
     this.ask()(q).subscribe({
-      next: res => {
+      next: (res) => {
         this.isGenerating.set(false);
-        this.messages.update(list => [
+        this.messages.update((list) => [
           ...list,
-          { sender: 'assistant', text: res.answer, sources: res.sources, timestamp: new Date() }
+          { sender: 'assistant', text: res.answer, sources: res.sources, timestamp: new Date() },
         ]);
         this.scrollToBottom();
       },
       error: () => {
         this.isGenerating.set(false);
-        this.messages.update(list => [
+        this.messages.update((list) => [
           ...list,
-          { sender: 'assistant', text: this.errorMessage(), timestamp: new Date() }
+          { sender: 'assistant', text: this.errorMessage(), timestamp: new Date() },
         ]);
         this.scrollToBottom();
-      }
+      },
     });
   }
 

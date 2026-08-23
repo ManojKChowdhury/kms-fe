@@ -7,7 +7,7 @@ const UNAUTHENTICATED_ENDPOINTS = ['/auth/login', '/auth/register'];
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = inject(AuthService).getToken();
 
-  if (!token || UNAUTHENTICATED_ENDPOINTS.some(path => req.url.includes(path))) {
+  if (!token || UNAUTHENTICATED_ENDPOINTS.some((path) => req.url.includes(path))) {
     return next(req);
   }
 

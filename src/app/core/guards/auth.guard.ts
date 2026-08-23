@@ -8,13 +8,13 @@ export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   return authService.ensureUserLoaded().pipe(
-    map(isAuth => {
+    map((isAuth) => {
       if (isAuth) {
         return true;
       }
       router.navigate(['/login']);
       return false;
-    })
+    }),
   );
 };
 
@@ -23,12 +23,12 @@ export const noAuthGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   return authService.ensureUserLoaded().pipe(
-    map(isAuth => {
+    map((isAuth) => {
       if (isAuth) {
         router.navigate(['/dashboard']);
         return false;
       }
       return true;
-    })
+    }),
   );
 };

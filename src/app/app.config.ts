@@ -13,6 +13,6 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     { provide: ENVIRONMENT_TOKEN, useValue: environment },
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor]))
-  ]
+    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+  ],
 };

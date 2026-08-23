@@ -6,7 +6,10 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "prepare": "husky"
   },
   "private": true,
   "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621",
@@ -24,8 +27,9 @@
     "@angular/build": "^21.2.19",
     "@angular/cli": "^21.2.19",
     "@angular/compiler-cli": "^21.2.0",
+    "@biomejs/biome": "^2.5.10",
+    "husky": "^9.1.7",
     "jsdom": "^28.0.0",
-    "prettier": "^3.8.1",
     "sass": "^1.101.0",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"

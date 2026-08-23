@@ -10,7 +10,7 @@ import { ToastService } from '../../core/services/toast.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './agent-keys.component.html',
-  styleUrl: './agent-keys.component.scss'
+  styleUrl: './agent-keys.component.scss',
 })
 export class AgentKeysComponent implements OnInit {
   private agentService = inject(AgentService);
@@ -39,14 +39,14 @@ export class AgentKeysComponent implements OnInit {
 
   fetchKeys() {
     this.agentService.getKeys().subscribe({
-      next: data => {
+      next: (data) => {
         this.keys.set(data);
         this.isLoading.set(false);
       },
       error: () => {
         this.isLoading.set(false);
         this.toast.error('Failed to load API keys.');
-      }
+      },
     });
   }
 
@@ -68,7 +68,7 @@ export class AgentKeysComponent implements OnInit {
       error: () => {
         this.isGenerating.set(false);
         this.toast.error('Failed to generate key.');
-      }
+      },
     });
   }
 
@@ -76,33 +76,36 @@ export class AgentKeysComponent implements OnInit {
     const confirmed = await this.confirm.confirm({
       title: 'Revoke API key?',
       message: 'External agents using this key will immediately be denied access.',
-      confirmLabel: 'Revoke'
+      confirmLabel: 'Revoke',
     });
     if (!confirmed) return;
 
     this.agentService.revokeKey(id).subscribe({
       next: () => {
-        this.keys.update(list => list.filter(k => k.id !== id));
+        this.keys.update((list) => list.filter((k) => k.id !== id));
         this.toast.success('API key revoked.');
       },
       error: () => {
         this.toast.error('Failed to revoke key.');
-      }
+      },
     });
   }
 
   copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text).then(() => {
-      if (text === this.newlyCreatedKey()) {
-        this.isCopied.set(true);
-        setTimeout(() => this.isCopied.set(false), 2000);
-      } else {
-        this.isCurlCopied.set(true);
-        setTimeout(() => this.isCurlCopied.set(false), 2000);
-      }
-    }).catch(err => {
-      console.error('Clipboard copy failed:', err);
-      this.toast.error('Could not copy to clipboard.');
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        if (text === this.newlyCreatedKey()) {
+          this.isCopied.set(true);
+          setTimeout(() => this.isCopied.set(false), 2000);
+        } else {
+          this.isCurlCopied.set(true);
+          setTimeout(() => this.isCurlCopied.set(false), 2000);
+        }
+      })
+      .catch((err) => {
+        console.error('Clipboard copy failed:', err);
+        this.toast.error('Could not copy to clipboard.');
+      });
   }
 }

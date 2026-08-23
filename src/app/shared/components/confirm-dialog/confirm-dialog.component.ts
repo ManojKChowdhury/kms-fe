@@ -6,8 +6,8 @@ import { ConfirmService } from '../../../core/services/confirm.service';
   templateUrl: './confirm-dialog.component.html',
   styleUrl: './confirm-dialog.component.scss',
   host: {
-    '(document:keydown.escape)': 'confirmService.dismiss()'
-  }
+    '(document:keydown.escape)': 'confirmService.dismiss()',
+  },
 })
 export class ConfirmDialogComponent {
   protected readonly confirmService = inject(ConfirmService);

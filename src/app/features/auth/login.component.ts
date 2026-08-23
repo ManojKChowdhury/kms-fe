@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrl: './login.component.scss',
 })
 export class LoginComponent {
   private authService = inject(AuthService);
@@ -22,11 +22,11 @@ export class LoginComponent {
 
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]]
+    password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
   toggleMode() {
-    this.mode.update(m => m === 'signin' ? 'register' : 'signin');
+    this.mode.update((m) => (m === 'signin' ? 'register' : 'signin'));
     this.errorMessage.set(null);
     this.successMessage.set(null);
     this.form.controls.password.reset();
@@ -55,7 +55,7 @@ export class LoginComponent {
           this.isLoading.set(false);
           const msg = (err as Error)?.message || 'Registration failed. Try again.';
           this.errorMessage.set(msg);
-        }
+        },
       });
     } else {
       this.authService.login(email, password).subscribe({
@@ -67,7 +67,7 @@ export class LoginComponent {
           this.isLoading.set(false);
           const msg = (err as Error)?.message || 'Incorrect email or password.';
           this.errorMessage.set(msg);
-        }
+        },
       });
     }
   }

@@ -14,7 +14,7 @@ export interface AgentKeyCreated extends AgentKey {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AgentService {
   private readonly apiUrl = 'http://localhost:8000/api/v1/agents';

@@ -23,7 +23,7 @@ export const TOKEN_KEY = 'kms_token';
 const DEFAULT_PREFERENCES: UserPreferences = {
   theme: 'dark',
   default_provider: 'openai',
-  summary_length: 'medium'
+  summary_length: 'medium',
 };
 
 export const ENVIRONMENT_TOKEN = new InjectionToken<{
@@ -32,8 +32,7 @@ export const ENVIRONMENT_TOKEN = new InjectionToken<{
 }>('environment token');
 
 export function environmentProviderFactory() {
-  return import('../../../environments/environment')
-    .then((mod) => mod.environment);
+  return import('../../../environments/environment').then((mod) => mod.environment);
 }
 
 @Injectable({ providedIn: 'root' })
@@ -72,12 +71,12 @@ export class AuthService {
       const token = localStorage.getItem(TOKEN_KEY);
       this.userLoaded$ = token
         ? this.fetchCurrentUser().pipe(
-            map(user => !!user),
+            map((user) => !!user),
             catchError(() => {
               this.logout(); // Token stale or invalid
               return of(false);
             }),
-            shareReplay(1)
+            shareReplay(1),
           )
         : of(false);
     }
@@ -92,44 +91,44 @@ export class AuthService {
     return this.http.post<User>(`${this.apiUrl}/register`, { email, password });
   }
 
-  login(email: string, password: string): Observable<{ access_token: string, token_type: string }> {
+  login(email: string, password: string): Observable<{ access_token: string; token_type: string }> {
     const body = new URLSearchParams();
     body.set('username', email);
     body.set('password', password);
 
-    return this.http.post<{ access_token: string, token_type: string }>(
-      `${this.apiUrl}/login`,
-      body.toString(),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-    ).pipe(
-      tap(res => {
-        localStorage.setItem(TOKEN_KEY, res.access_token);
-        // Reset the cached session and load the fresh user profile immediately.
-        this.userLoaded$ = undefined;
-        this.ensureUserLoaded().subscribe();
+    return this.http
+      .post<{ access_token: string; token_type: string }>(`${this.apiUrl}/login`, body.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       })
-    );
+      .pipe(
+        tap((res) => {
+          localStorage.setItem(TOKEN_KEY, res.access_token);
+          // Reset the cached session and load the fresh user profile immediately.
+          this.userLoaded$ = undefined;
+          this.ensureUserLoaded().subscribe();
+        }),
+      );
   }
 
   fetchCurrentUser(): Observable<User> {
     return this.http.get<User>(`${this.apiUrl}/me`).pipe(
-      tap(user => {
+      tap((user) => {
         this.currentUser.set(user);
-      })
+      }),
     );
   }
 
   updatePreferences(prefs: Partial<UserPreferences>): Observable<UserPreferences> {
     return this.http.put<UserPreferences>(`${this.apiUrl}/me/preferences`, prefs).pipe(
-      tap(updatedPrefs => {
+      tap((updatedPrefs) => {
         const user = this.currentUser();
         if (user) {
           this.currentUser.set({
             ...user,
-            preferences: updatedPrefs
+            preferences: updatedPrefs,
           });
         }
-      })
+      }),
     );
   }
 

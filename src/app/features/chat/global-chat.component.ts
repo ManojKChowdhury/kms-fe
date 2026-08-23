@@ -6,7 +6,7 @@ import { ChatPanelComponent } from '../../shared/components/chat-panel/chat-pane
   selector: 'app-global-chat',
   imports: [ChatPanelComponent],
   templateUrl: './global-chat.component.html',
-  styleUrl: './global-chat.component.scss'
+  styleUrl: './global-chat.component.scss',
 })
 export class GlobalChatComponent {
   private docService = inject(DocumentService);
@@ -14,6 +14,5 @@ export class GlobalChatComponent {
   readonly chatErrorMessage =
     'An error occurred while communicating with the AI search server. Please ensure the backend is running and correct LLM providers are configured.';
 
-  protected readonly askGlobal = (question: string) =>
-    this.docService.askGlobalQuestion(question);
+  protected readonly askGlobal = (question: string) => this.docService.askGlobalQuestion(question);
 }

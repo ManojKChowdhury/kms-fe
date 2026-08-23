@@ -32,7 +32,12 @@
             <span class="status-dot" [class.connected]="wsService.connected()"></span>
             <span>{{ wsService.connected() ? 'Live Sync' : 'Offline' }}</span>
           </div>
-          <button class="theme-toggle-btn" (click)="toggleTheme()" title="Toggle Theme">
+          <button
+            class="theme-toggle-btn"
+            (click)="toggleTheme()"
+            title="Toggle Theme"
+            [attr.aria-label]="authService.userPreferences().theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+          >
             @if (authService.userPreferences().theme === 'dark') {
               ☀️
             } @else {
@@ -50,3 +55,6 @@
 } @else {
   <router-outlet />
 }
+
+<app-toast-container />
+<app-confirm-dialog />

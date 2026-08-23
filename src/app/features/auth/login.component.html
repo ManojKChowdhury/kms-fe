@@ -1,7 +1,7 @@
 <div class="login-wrapper">
   <div class="glow-bg"></div>
   <div class="login-card glass">
-    <h2 class="login-title gradient-text">{{ isRegisterMode() ? 'Create Account' : 'Welcome Back' }}</h2>
+    <h2 class="login-title gradient-text">{{ mode() === 'register' ? 'Create Account' : 'Welcome Back' }}</h2>
     <p class="login-subtitle">AI-Powered Knowledge Management System</p>
     
     @if (errorMessage()) {
@@ -12,7 +12,7 @@
       <div class="success-banner">{{ successMessage() }}</div>
     }
 
-    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" #loginForm="ngForm">
       <div class="form-group">
         <label class="form-label" for="email">Email Address</label>
         <input 
@@ -20,7 +20,7 @@
           id="email" 
           name="email" 
           class="form-input" 
-          [(ngModel)]="email" 
+          formControlName="email" 
           required 
           email
           placeholder="name@company.com"
@@ -34,7 +34,7 @@
           id="password" 
           name="password" 
           class="form-input" 
-          [(ngModel)]="password" 
+          formControlName="password" 
           required 
           minlength="6"
           placeholder="••••••••"
@@ -42,14 +42,14 @@
       </div>
       
       <button type="submit" class="btn btn-primary login-btn" [disabled]="loginForm.invalid || isLoading()">
-        {{ isLoading() ? 'Processing...' : (isRegisterMode() ? 'Sign Up' : 'Sign In') }}
+        {{ isLoading() ? 'Processing...' : (mode() === 'register' ? 'Sign Up' : 'Sign In') }}
       </button>
     </form>
 
     <div class="toggle-mode">
-      <span>{{ isRegisterMode() ? 'Already have an account?' : 'New to KMS?' }}</span>
+      <span>{{ mode() === 'register' ? 'Already have an account?' : 'New to KMS?' }}</span>
       <button type="button" class="toggle-btn" (click)="toggleMode()">
-        {{ isRegisterMode() ? 'Sign In' : 'Create an account' }}
+        {{ mode() === 'register' ? 'Sign In' : 'Create an account' }}
       </button>
     </div>
   </div>

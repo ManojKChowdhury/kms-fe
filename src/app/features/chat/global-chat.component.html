@@ -1,75 +1,19 @@
-<div class="global-chat-container glass flex-col overflow-hidden">
-  
-  <!-- Chat Workspace Header -->
+<div class="global-chat-container glass overflow-hidden">
   <div class="chat-header">
     <h2 class="chat-title gradient-text">Global AI Workspace</h2>
     <p class="chat-subtitle">Ask questions across your entire document repository. The system uses RAG to retrieve matching vectors and synthesize an answer.</p>
   </div>
 
-  <!-- Messages Stream -->
-  <div class="chat-messages scroll-y flex-grow-1" #chatScrollContainer>
-    @if (messages.length === 0) {
-      <div class="chat-empty">
-        <span class="empty-icon">🧠</span>
-        <h3>Ask Your Knowledge Base</h3>
-        <p>Type a question below. The AI will look up relevant content inside all your uploaded text and PDF files to compose a response.</p>
-      </div>
-    } @else {
-      @for (msg of messages; track $index) {
-        <div class="chat-bubble-wrapper" [class.user-msg]="msg.sender === 'user'">
-          <div class="chat-avatar">{{ msg.sender === 'user' ? '👤' : '🤖' }}</div>
-          <div class="chat-bubble">
-            <div class="bubble-text">{{ msg.text }}</div>
-            
-            <!-- Citations with document links -->
-            @if (msg.sources && msg.sources.length > 0) {
-              <div class="citations">
-                <span class="citation-title">Sources consulted:</span>
-                <div class="citation-links">
-                  @for (src of msg.sources; track $index) {
-                    <a [routerLink]="['/documents', src.document_id]" class="citation-item-link" [title]="'Score: ' + src.similarity_score">
-                      📄 {{ src.document_title }} (Chunk #{{ src.chunk_index }} • {{ src.similarity_score * 100 | number:'1.0-1' }}% Match)
-                    </a>
-                  }
-                </div>
-              </div>
-            }
-            
-            <span class="bubble-time">{{ msg.timestamp | date:'h:mm a' }}</span>
-          </div>
-        </div>
-      }
-
-      @if (isGenerating()) {
-        <div class="chat-bubble-wrapper">
-          <div class="chat-avatar">🤖</div>
-          <div class="chat-bubble typing-bubble">
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
-          </div>
-        </div>
-      }
-    }
-  </div>
-
-  <!-- Input Bar -->
-  <form (ngSubmit)="sendQuestion()" class="chat-input-bar">
-    <input 
-      type="text" 
-      class="form-input chat-input" 
-      placeholder="Query your global knowledge base..."
-      [(ngModel)]="currentQuestion"
-      name="question"
-      [disabled]="isGenerating()"
-    />
-    <button 
-      type="submit" 
-      class="btn btn-primary"
-      [disabled]="!currentQuestion.trim() || isGenerating()"
-    >
-      Query
-    </button>
-  </form>
-
+  <app-chat-panel
+    [ask]="askGlobal"
+    placeholder="Query your global knowledge base..."
+    submitLabel="Query"
+    errorMessage="An error occurred while communicating with the AI search server. Please ensure the backend is running and correct LLM providers are configured."
+  >
+    <div chatEmpty>
+      <span class="empty-icon">🧠</span>
+      <h3>Ask Your Knowledge Base</h3>
+      <p>Type a question below. The AI will look up relevant content inside all your uploaded text and PDF files to compose a response.</p>
+    </div>
+  </app-chat-panel>
 </div>

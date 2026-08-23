@@ -28,13 +28,18 @@
       <h3 class="section-title">Upload Knowledge File</h3>
       <p class="section-desc">Add raw txt, md, or PDF files. AI will auto-summarize, extract keywords, and generate vector embeddings.</p>
       
-      <div 
+      <div
         class="drop-zone"
         [class.drag-over]="isDragOver()"
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave()"
         (drop)="onDrop($event)"
         (click)="fileInput.click()"
+        role="button"
+        tabindex="0"
+        aria-label="Upload knowledge file: drag and drop or press Enter to browse"
+        (keydown.enter)="fileInput.click()"
+        (keydown.space)="$event.preventDefault(); fileInput.click()"
       >
         <input 
           type="file" 
@@ -91,11 +96,11 @@
         </div>
       } @else {
         <div class="document-grid">
-          @for (doc of documents; track doc.id) {
+          @for (doc of documents(); track doc.id) {
             <div class="document-card glass glass-hover" [routerLink]="['/documents', doc.id]">
               <div class="card-top">
-                <span class="file-icon">{{ getFileIcon(doc.file_type) }}</span>
-                <span class="badge" [class]="getBadgeClass(doc.status)">{{ doc.status }}</span>
+                <span class="file-icon">{{ doc.file_type | fileIcon }}</span>
+                <span class="badge" [class]="doc.status | statusBadge">{{ doc.status }}</span>
               </div>
               
               <h4 class="doc-title" [title]="doc.title">{{ doc.title }}</h4>

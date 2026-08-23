@@ -1,15 +1,16 @@
-import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { BehaviorSubject, Subscription, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs';
 import { Document, DocumentService } from '../../core/services/document.service';
 import { WebSocketService } from '../../core/services/websocket.service';
+import { FileIconPipe } from '../../shared/pipes/file-icon.pipe';
+import { StatusBadgePipe } from '../../shared/pipes/status-badge.pipe';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [DatePipe, RouterLink, FormsModule, FileIconPipe, StatusBadgePipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -17,25 +18,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private docService = inject(DocumentService);
   private wsService = inject(WebSocketService);
 
-  documents: Document[] = [];
-  
-  // Reactive dashboard metrics
-  totalCount = signal(0);
-  completedCount = signal(0);
-  processingCount = signal(0);
-  failedCount = signal(0);
-  
+  public documents = signal<Document[]>([]);
+
+  // Reactive dashboard metrics derived directly from the documents signal
+  readonly totalCount = computed(() => this.documents().length);
+  readonly completedCount = computed(() => this.documents().filter(d => d.status === 'completed').length);
+  readonly processingCount = computed(() =>
+    this.documents().filter(d => d.status === 'processing' || d.status === 'pending').length
+  );
+  readonly failedCount = computed(() => this.documents().filter(d => d.status === 'failed').length);
+
   // Search properties
   searchQuery = '';
   private searchSubject = new BehaviorSubject<string>('');
-  
-  // Upload and loading states
-  isDragOver = signal(false);
-  isLoading = signal(true);
-  uploadingFile = signal<string | null>(null);
-  uploadError = signal<string | null>(null);
 
-  // Subscriptions
+  // Upload and loading states
+  readonly isDragOver = signal(false);
+  readonly isLoading = signal(true);
+  readonly uploadingFile = signal<string | null>(null);
+  readonly uploadError = signal<string | null>(null);
+
   private subs = new Subscription();
 
   ngOnInit() {
@@ -47,9 +49,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       switchMap(term => this.docService.getDocuments(term))
     ).subscribe({
       next: (docs) => {
-        this.documents = docs;
+        this.documents.set(docs);
         this.isLoading.set(false);
-        this.recalculateMetrics();
       },
       error: () => this.isLoading.set(false)
     });
@@ -73,14 +74,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   onSearchChange(term: string) {
-    this.searchSubject.next(term);
-  }
-
-  recalculateMetrics() {
-    this.totalCount.set(this.documents.length);
-    this.completedCount.set(this.documents.filter(d => d.status === 'completed').length);
-    this.processingCount.set(this.documents.filter(d => d.status === 'processing' || d.status === 'pending').length);
-    this.failedCount.set(this.documents.filter(d => d.status === 'failed').length);
+    this.searchQuery = term;
   }
 
   // --- Drag and Drop File Handlers ---
@@ -97,16 +91,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   onDrop(e: DragEvent) {
     e.preventDefault();
     this.isDragOver.set(false);
-    
-    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-      this.handleUpload(e.dataTransfer.files[0]);
+
+    const file = e.dataTransfer?.files[0];
+    if (file) {
+      this.handleUpload(file);
     }
   }
 
-  onFileSelected(e: any) {
-    if (e.target.files && e.target.files.length > 0) {
-      this.handleUpload(e.target.files[0]);
+  onFileSelected(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      this.handleUpload(file);
     }
+    input.value = ''; // allow re-selecting the same file
   }
 
   private handleUpload(file: File) {
@@ -115,7 +113,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.uploadError.set('Unsupported file format. Please upload .txt, .md, or .pdf files.');
       return;
     }
-    
+
     if (file.size > 10 * 1024 * 1024) {
       this.uploadError.set('File size exceeds 10MB limit.');
       return;
@@ -134,24 +132,5 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.uploadError.set(err.error?.detail || 'An error occurred during file upload.');
       }
     });
-  }
-
-  // --- Display Helpers ---
-
-  getFileIcon(ext: string): string {
-    switch (ext) {
-      case 'pdf': return '📕';
-      case 'md': return '📘';
-      default: return '📄';
-    }
-  }
-
-  getBadgeClass(status: string): string {
-    switch (status) {
-      case 'completed': return 'badge-completed';
-      case 'processing': return 'badge-processing';
-      case 'failed': return 'badge-failed';
-      default: return 'badge-pending';
-    }
   }
 }

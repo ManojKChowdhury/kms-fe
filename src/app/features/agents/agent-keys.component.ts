@@ -2,6 +2,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AgentService, AgentKey } from '../../core/services/agent.service';
+import { ConfirmService } from '../../core/services/confirm.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-agent-keys',
@@ -12,18 +14,18 @@ import { AgentService, AgentKey } from '../../core/services/agent.service';
 })
 export class AgentKeysComponent implements OnInit {
   private agentService = inject(AgentService);
+  private confirm = inject(ConfirmService);
+  private toast = inject(ToastService);
 
   newKeyName = '';
   keys = signal<AgentKey[]>([]);
   newlyCreatedKey = signal<string | null>(null);
-  
-  // Loader states
+
   isLoading = signal(true);
   isGenerating = signal(false);
   isCopied = signal(false);
   isCurlCopied = signal(false);
 
-  // curl code block example
   readonly curlCommand = `curl -X POST http://localhost:8000/api/v1/documents/chat \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: kms_your_generated_secret_token_here" \\
@@ -37,48 +39,54 @@ export class AgentKeysComponent implements OnInit {
 
   fetchKeys() {
     this.agentService.getKeys().subscribe({
-      next: (data) => {
+      next: data => {
         this.keys.set(data);
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: () => {
+        this.isLoading.set(false);
+        this.toast.error('Failed to load API keys.');
+      }
     });
   }
 
-  generateKey() {
+  async generateKey() {
     const name = this.newKeyName.trim();
     if (!name || this.isGenerating()) return;
 
     this.isGenerating.set(true);
     this.newlyCreatedKey.set(null);
-    this.isCopied.set(false);
 
     this.agentService.createKey(name).subscribe({
       next: (res) => {
         this.isGenerating.set(false);
         this.newKeyName = '';
         this.newlyCreatedKey.set(res.api_key);
-        // Refresh key lists (which returns keys without raw plaintext)
+        this.toast.success('API key generated.');
         this.fetchKeys();
       },
       error: () => {
         this.isGenerating.set(false);
-        alert('Failed to generate key.');
+        this.toast.error('Failed to generate key.');
       }
     });
   }
 
-  revokeKey(id: number) {
-    if (!confirm('Are you sure you want to revoke this API key? External agents using this key will immediately be denied access.')) {
-      return;
-    }
+  async revokeKey(id: number) {
+    const confirmed = await this.confirm.confirm({
+      title: 'Revoke API key?',
+      message: 'External agents using this key will immediately be denied access.',
+      confirmLabel: 'Revoke'
+    });
+    if (!confirmed) return;
 
     this.agentService.revokeKey(id).subscribe({
       next: () => {
         this.keys.update(list => list.filter(k => k.id !== id));
+        this.toast.success('API key revoked.');
       },
       error: () => {
-        alert('Failed to revoke key.');
+        this.toast.error('Failed to revoke key.');
       }
     });
   }
@@ -94,6 +102,7 @@ export class AgentKeysComponent implements OnInit {
       }
     }).catch(err => {
       console.error('Clipboard copy failed:', err);
+      this.toast.error('Could not copy to clipboard.');
     });
   }
 }

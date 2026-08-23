@@ -1,75 +1,19 @@
-import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { DocumentService, ChatResponse } from '../../core/services/document.service';
-
-interface ChatMessage {
-  sender: 'user' | 'assistant';
-  text: string;
-  sources?: any[];
-  timestamp: Date;
-}
+import { Component, inject } from '@angular/core';
+import { DocumentService } from '../../core/services/document.service';
+import { ChatPanelComponent } from '../../shared/components/chat-panel/chat-panel.component';
 
 @Component({
   selector: 'app-global-chat',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [ChatPanelComponent],
   templateUrl: './global-chat.component.html',
   styleUrl: './global-chat.component.scss'
 })
 export class GlobalChatComponent {
   private docService = inject(DocumentService);
 
-  currentQuestion = '';
-  messages: ChatMessage[] = [];
-  isGenerating = signal(false);
+  readonly chatErrorMessage =
+    'An error occurred while communicating with the AI search server. Please ensure the backend is running and correct LLM providers are configured.';
 
-  sendQuestion() {
-    const q = this.currentQuestion.trim();
-    if (!q || this.isGenerating()) return;
-
-    // Add user message
-    this.messages.push({
-      sender: 'user',
-      text: q,
-      timestamp: new Date()
-    });
-    
-    this.currentQuestion = '';
-    this.isGenerating.set(true);
-    this.scrollToBottom();
-
-    // Query global chat API
-    this.docService.askGlobalQuestion(q).subscribe({
-      next: (res: ChatResponse) => {
-        this.isGenerating.set(false);
-        this.messages.push({
-          sender: 'assistant',
-          text: res.answer,
-          sources: res.sources,
-          timestamp: new Date()
-        });
-        this.scrollToBottom();
-      },
-      error: () => {
-        this.isGenerating.set(false);
-        this.messages.push({
-          sender: 'assistant',
-          text: 'An error occurred while communicating with the AI search server. Please ensure the backend is running and correct LLM providers are configured.',
-          timestamp: new Date()
-        });
-        this.scrollToBottom();
-      }
-    });
-  }
-
-  private scrollToBottom() {
-    setTimeout(() => {
-      const container = document.querySelector('.chat-messages');
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }, 50);
-  }
+  protected readonly askGlobal = (question: string) =>
+    this.docService.askGlobalQuestion(question);
 }

@@ -1,0 +1,76 @@
+<div class="chat-messages scroll-y" #messagesContainer>
+  @if (messages().length === 0) {
+    <div class="chat-empty">
+      <ng-content select="[chatEmpty]" />
+    </div>
+  } @else {
+    @for (msg of messages(); track $index) {
+      <div class="chat-bubble-wrapper" [class.user-msg]="msg.sender === 'user'">
+        <div class="chat-avatar" aria-hidden="true">{{ msg.sender === 'user' ? '👤' : '🤖' }}</div>
+        <div class="chat-bubble">
+          <div class="bubble-text">{{ msg.text }}</div>
+
+          @if (msg.sources && msg.sources.length > 0) {
+            <div class="citations">
+              <span class="citation-title">{{ sourcesLabel() }}</span>
+              <div class="citation-links">
+                @for (src of msg.sources; track $index) {
+                  @if (src.document_id) {
+                    <a
+                      [routerLink]="['/documents', src.document_id]"
+                      class="citation-item-link"
+                      [title]="'Score: ' + src.similarity_score"
+                    >
+                      📄 {{ src.document_title }} · Chunk #{{ src.chunk_index }}
+                      ({{ src.similarity_score * 100 | number: '1.0-1' }}% Match)
+                    </a>
+                  } @else {
+                    <span
+                      class="citation-item"
+                      [title]="'Score: ' + src.similarity_score"
+                    >
+                      Chunk #{{ src.chunk_index }} ({{ src.similarity_score * 100 | number: '1.0-1' }}% Match)
+                    </span>
+                  }
+                }
+              </div>
+            </div>
+          }
+
+          <span class="bubble-time">{{ msg.timestamp | date: 'h:mm a' }}</span>
+        </div>
+      </div>
+    }
+
+    @if (isGenerating()) {
+      <div class="chat-bubble-wrapper">
+        <div class="chat-avatar" aria-hidden="true">🤖</div>
+        <div class="chat-bubble typing-bubble">
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+<form (ngSubmit)="sendQuestion()" class="chat-input-bar">
+  <input
+    type="text"
+    class="form-input chat-input"
+    [placeholder]="placeholder()"
+    [(ngModel)]="question"
+    name="question"
+    autocomplete="off"
+    aria-label="Chat question"
+    [disabled]="isGenerating() || disabled()"
+  />
+  <button
+    type="submit"
+    class="btn btn-primary"
+    [disabled]="!question().trim() || isGenerating() || disabled()"
+  >
+    {{ submitLabel() }}
+  </button>
+</form>

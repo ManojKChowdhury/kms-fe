@@ -1,6 +1,8 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, EnvironmentInjector, effect, computed, signal, inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { InjectionToken } from '@angular/core';
 import { Observable, of, tap, map, catchError, shareReplay } from 'rxjs';
 
 export interface UserPreferences {
@@ -16,21 +18,45 @@ export interface User {
   preferences?: UserPreferences;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+export const TOKEN_KEY = 'kms_token';
+
+const DEFAULT_PREFERENCES: UserPreferences = {
+  theme: 'dark',
+  default_provider: 'openai',
+  summary_length: 'medium'
+};
+
+export const ENVIRONMENT_TOKEN = new InjectionToken<{
+  apiUrl: string;
+  wsUrl: string;
+}>('environment token');
+
+export function environmentProviderFactory() {
+  return import('../../../environments/environment')
+    .then((mod) => mod.environment);
+}
+
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:8000/api/v1/auth';
-  private userLoaded$?: Observable<boolean>;
-  
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+  private readonly env = inject(ENVIRONMENT_TOKEN, { optional: true });
+
+  private readonly apiUrl: string = this.env?.apiUrl ?? 'http://localhost:8000/api/v1/auth';
+
+  private userLoaded$: Observable<boolean> | undefined;
+
   // Reactive signals for state management
   readonly currentUser = signal<User | null>(null);
   readonly isAuthenticated = computed(() => this.currentUser() !== null);
-  readonly userPreferences = computed(() => this.currentUser()?.preferences || { theme: 'dark', default_provider: 'openai', summary_length: 'medium' });
+  readonly userPreferences = computed(() => this.currentUser()?.preferences ?? DEFAULT_PREFERENCES);
 
-  constructor(private http: HttpClient, private router: Router) {
-    // Check for existing token and load user
-    this.loadUserFromStorage();
+  /** Observable view of the auth state, e.g. for WebSocket lifecycle wiring. */
+  readonly isAuthenticated$ = toObservable(this.isAuthenticated);
+
+  constructor() {
+    // Warm up the session once at startup; route guards reuse this shared request.
+    this.ensureUserLoaded().subscribe();
 
     // Synchronize theme signal changes with document theme attribute
     effect(() => {
@@ -40,42 +66,26 @@ export class AuthService {
   }
 
   ensureUserLoaded(): Observable<boolean> {
-    if (this.currentUser()) {
-      return of(true);
-    }
-    const token = this.getToken();
-    if (!token) {
-      return of(false);
-    }
     if (!this.userLoaded$) {
-      this.userLoaded$ = this.fetchCurrentUser().pipe(
-        map(user => !!user),
-        catchError(() => {
-          this.logout();
-          return of(false);
-        }),
-        shareReplay(1)
-      );
+      // NOTE: token in localStorage is readable by XSS payloads; httpOnly cookies
+      // would be safer but require backend support.
+      const token = localStorage.getItem(TOKEN_KEY);
+      this.userLoaded$ = token
+        ? this.fetchCurrentUser().pipe(
+            map(user => !!user),
+            catchError(() => {
+              this.logout(); // Token stale or invalid
+              return of(false);
+            }),
+            shareReplay(1)
+          )
+        : of(false);
     }
     return this.userLoaded$;
   }
 
-  private loadUserFromStorage() {
-    const token = this.getToken();
-    if (token) {
-      this.fetchCurrentUser().subscribe({
-        error: () => this.logout() // Token stale or invalid
-      });
-    }
-  }
-
   getToken(): string | null {
-    return localStorage.getItem('kms_token');
-  }
-
-  getAuthHeaders(): HttpHeaders {
-    const token = this.getToken();
-    return new HttpHeaders(token ? { 'Authorization': `Bearer ${token}` } : {});
+    return localStorage.getItem(TOKEN_KEY);
   }
 
   register(email: string, password: string): Observable<User> {
@@ -87,25 +97,22 @@ export class AuthService {
     body.set('username', email);
     body.set('password', password);
 
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/x-www-form-urlencoded'
-    });
-
     return this.http.post<{ access_token: string, token_type: string }>(
       `${this.apiUrl}/login`,
       body.toString(),
-      { headers }
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
     ).pipe(
       tap(res => {
-        localStorage.setItem('kms_token', res.access_token);
+        localStorage.setItem(TOKEN_KEY, res.access_token);
+        // Reset the cached session and load the fresh user profile immediately.
         this.userLoaded$ = undefined;
-        this.loadUserFromStorage();
+        this.ensureUserLoaded().subscribe();
       })
     );
   }
 
   fetchCurrentUser(): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/me`, { headers: this.getAuthHeaders() }).pipe(
+    return this.http.get<User>(`${this.apiUrl}/me`).pipe(
       tap(user => {
         this.currentUser.set(user);
       })
@@ -113,7 +120,7 @@ export class AuthService {
   }
 
   updatePreferences(prefs: Partial<UserPreferences>): Observable<UserPreferences> {
-    return this.http.put<UserPreferences>(`${this.apiUrl}/me/preferences`, prefs, { headers: this.getAuthHeaders() }).pipe(
+    return this.http.put<UserPreferences>(`${this.apiUrl}/me/preferences`, prefs).pipe(
       tap(updatedPrefs => {
         const user = this.currentUser();
         if (user) {
@@ -127,9 +134,9 @@ export class AuthService {
   }
 
   logout() {
-    localStorage.removeItem('kms_token');
-    this.currentUser.set(null);
+    localStorage.removeItem(TOKEN_KEY);
     this.userLoaded$ = undefined;
+    this.currentUser.set(null);
     this.router.navigate(['/login']);
   }
 }

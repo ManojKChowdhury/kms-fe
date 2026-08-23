@@ -1,63 +1,70 @@
-import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
-import { DocumentDetail, DocumentService, ChatResponse } from '../../core/services/document.service';
+import { DatePipe } from '@angular/common';
+import { Subscription, map, tap } from 'rxjs';
+import { DocumentDetail, DocumentService } from '../../core/services/document.service';
 import { WebSocketService } from '../../core/services/websocket.service';
-
-interface ChatMessage {
-  sender: 'user' | 'assistant';
-  text: string;
-  sources?: any[];
-  timestamp: Date;
-}
+import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
+import { FileIconPipe } from '../../shared/pipes/file-icon.pipe';
+import { StatusBadgePipe } from '../../shared/pipes/status-badge.pipe';
+import { ChatPanelComponent } from '../../shared/components/chat-panel/chat-panel.component';
 
 @Component({
   selector: 'app-document-detail',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [DatePipe, RouterLink, FormsModule, FileIconPipe, StatusBadgePipe, ChatPanelComponent],
   templateUrl: './document-detail.component.html',
   styleUrl: './document-detail.component.scss'
 })
-export class DocumentDetailComponent implements OnInit, OnDestroy {
+export class DocumentDetailComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private docService = inject(DocumentService);
   private wsService = inject(WebSocketService);
+  private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
 
-  docId!: number;
+  // Reactive route param: reloads details whenever :id changes.
+  private readonly docId = toSignal(
+    this.route.paramMap.pipe(map(params => Number(params.get('id')))),
+    { initialValue: 0 }
+  );
+
   doc = signal<DocumentDetail | null>(null);
-  
+
   // Loading states
-  isLoading = signal(true);
-  isDeleting = signal(false);
-  isGenerating = signal(false);
+  readonly isLoading = signal(true);
+  readonly isDeleting = signal(false);
 
   // Tag editing
-  isEditingTags = signal(false);
+  readonly isEditingTags = signal(false);
   editTagsString = '';
 
-  // Chat parameters
-  currentQuestion = '';
-  messages: ChatMessage[] = [];
+  readonly chatErrorMessage =
+    'An error occurred while answering your question. Please verify your LLM credentials or try again later.';
+
+  protected readonly askDocument = (question: string) =>
+    this.docService.askDocumentQuestion(this.docId(), question);
 
   private subs = new Subscription();
 
-  ngOnInit() {
-    this.route.params.subscribe(params => {
-      this.docId = +params['id'];
-      this.loadDocumentDetails();
-    });
+  constructor() {
+    this.subs.add(
+      toObservable(this.docId)
+        .pipe(tap(() => this.loadDocumentDetails()))
+        .subscribe()
+    );
 
     // Handle WebSocket broadcasts for live document updates
-    const wsSub = this.wsService.messages$.subscribe(msg => {
-      if (msg.event === 'doc_status' && msg.doc_id === this.docId) {
-        // Refresh details
-        this.loadDocumentDetails();
-      }
-    });
-    this.subs.add(wsSub);
+    this.subs.add(
+      this.wsService.messages$.subscribe(msg => {
+        if (msg.event === 'doc_status' && msg.doc_id === this.docId()) {
+          this.loadDocumentDetails();
+        }
+      })
+    );
   }
 
   ngOnDestroy() {
@@ -65,7 +72,10 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
   }
 
   loadDocumentDetails() {
-    this.docService.getDocument(this.docId).subscribe({
+    const id = this.docId();
+    if (!id) return;
+
+    this.docService.getDocument(id).subscribe({
       next: (data) => {
         this.doc.set(data);
         this.isLoading.set(false);
@@ -76,20 +86,24 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteDocument() {
-    if (!confirm('Are you sure you want to delete this document? This will remove all summaries, tags, and vector index chunks permanently.')) {
-      return;
-    }
+  async deleteDocument() {
+    const confirmed = await this.confirm.confirm({
+      title: 'Delete document?',
+      message: 'This will remove the document along with all summaries, tags and vector index chunks permanently.',
+      confirmLabel: 'Delete'
+    });
+    if (!confirmed) return;
 
     this.isDeleting.set(true);
-    this.docService.deleteDocument(this.docId).subscribe({
+    this.docService.deleteDocument(this.docId()).subscribe({
       next: () => {
         this.isDeleting.set(false);
+        this.toast.success('Document deleted.');
         this.router.navigate(['/dashboard']);
       },
       error: () => {
         this.isDeleting.set(false);
-        alert('Failed to delete document.');
+        this.toast.error('Failed to delete document.');
       }
     });
   }
@@ -110,7 +124,7 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
       .map(t => t.trim().toLowerCase())
       .filter(t => t.length > 0);
 
-    this.docService.updateTags(this.docId, list).subscribe({
+    this.docService.updateTags(this.docId(), list).subscribe({
       next: (updatedDoc) => {
         const current = this.doc();
         if (current) {
@@ -120,80 +134,11 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
           });
         }
         this.isEditingTags.set(false);
+        this.toast.success('Tags updated.');
       },
       error: () => {
-        alert('Failed to update tags.');
+        this.toast.error('Failed to update tags.');
       }
     });
-  }
-
-  // --- Chat Bot Integrations ---
-
-  sendQuestion() {
-    const q = this.currentQuestion.trim();
-    if (!q || this.isGenerating()) return;
-
-    // Add user message
-    this.messages.push({
-      sender: 'user',
-      text: q,
-      timestamp: new Date()
-    });
-    
-    this.currentQuestion = '';
-    this.isGenerating.set(true);
-    this.scrollToBottom();
-
-    // Query API
-    this.docService.askDocumentQuestion(this.docId, q).subscribe({
-      next: (res: ChatResponse) => {
-        this.isGenerating.set(false);
-        this.messages.push({
-          sender: 'assistant',
-          text: res.answer,
-          sources: res.sources,
-          timestamp: new Date()
-        });
-        this.scrollToBottom();
-      },
-      error: () => {
-        this.isGenerating.set(false);
-        this.messages.push({
-          sender: 'assistant',
-          text: 'An error occurred while answering your question. Please verify your LLM credentials or try again later.',
-          timestamp: new Date()
-        });
-        this.scrollToBottom();
-      }
-    });
-  }
-
-  private scrollToBottom() {
-    // Scroll chat content box down using a microtask/setTimeout delay
-    setTimeout(() => {
-      const container = document.querySelector('.chat-messages');
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }, 50);
-  }
-
-  // --- Helper Methods ---
-
-  getFileIcon(ext: string): string {
-    switch (ext) {
-      case 'pdf': return '📕';
-      case 'md': return '📘';
-      default: return '📄';
-    }
-  }
-
-  getBadgeClass(status: string): string {
-    switch (status) {
-      case 'completed': return 'badge-completed';
-      case 'processing': return 'badge-processing';
-      case 'failed': return 'badge-failed';
-      default: return 'badge-pending';
-    }
   }
 }

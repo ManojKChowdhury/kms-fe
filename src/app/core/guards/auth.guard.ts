@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { Router, CanActivateFn } from '@angular/router';
+import { type CanActivateFn, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
@@ -14,7 +14,7 @@ export const authGuard: CanActivateFn = () => {
       }
       router.navigate(['/login']);
       return false;
-    }),
+    })
   );
 };
 
@@ -29,6 +29,6 @@ export const noAuthGuard: CanActivateFn = () => {
         return false;
       }
       return true;
-    }),
+    })
   );
 };

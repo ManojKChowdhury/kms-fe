@@ -1,4 +1,4 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
@@ -26,6 +26,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       return throwError(() => error);
-    }),
+    })
   );
 };

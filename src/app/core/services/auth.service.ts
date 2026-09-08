@@ -1,4 +1,4 @@
-import { Injectable, EnvironmentInjector, effect, computed, signal, inject } from '@angular/core';
+import { Injectable, effect, computed, signal, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -31,7 +31,7 @@ export const ENVIRONMENT_TOKEN = new InjectionToken<{
   wsUrl: string;
 }>('environment token');
 
-export function environmentProviderFactory() {
+export async function environmentProviderFactory() {
   return import('../../../environments/environment').then((mod) => mod.environment);
 }
 

@@ -3,7 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { Subscription, map, tap } from 'rxjs';
+import { Subscription, map, tap, timer } from 'rxjs';
 import { DocumentDetail, DocumentService } from '../../core/services/document.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -61,6 +61,14 @@ export class DocumentDetailComponent implements OnDestroy {
     this.subs.add(
       this.wsService.messages$.subscribe((msg) => {
         if (msg.event === 'doc_status' && msg.doc_id === this.docId()) {
+          this.loadDocumentDetails();
+        }
+      }),
+    );
+
+    this.subs.add(
+      timer(5000, 5000).subscribe(() => {
+        if (this.doc() && ['pending', 'processing'].includes(this.doc()!.status)) {
           this.loadDocumentDetails();
         }
       }),
@@ -141,6 +149,17 @@ export class DocumentDetailComponent implements OnDestroy {
       error: () => {
         this.toast.error('Failed to update tags.');
       },
+    });
+  }
+
+  reprocessDocument() {
+    this.docService.reprocessDocument(this.docId()).subscribe({
+      next: (doc) => {
+        const current = this.doc();
+        if (current) this.doc.set({ ...current, status: doc.status });
+        this.toast.info('Document queued for reprocessing.');
+      },
+      error: () => this.toast.error('Failed to queue document.'),
     });
   }
 }

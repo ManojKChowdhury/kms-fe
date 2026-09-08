@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { ENVIRONMENT_TOKEN } from './auth.service';
 
 export interface Document {
   id: number;
@@ -23,6 +24,8 @@ export interface SourceDetail {
   document_title?: string;
   chunk_index: number;
   similarity_score: number;
+  page_number?: number;
+  excerpt?: string;
 }
 
 export interface ChatResponse {
@@ -34,7 +37,8 @@ export interface ChatResponse {
   providedIn: 'root',
 })
 export class DocumentService {
-  private readonly apiUrl = 'http://localhost:8000/api/v1/documents';
+  private readonly env = inject(ENVIRONMENT_TOKEN);
+  private readonly apiUrl = `${this.env.apiUrl}/documents`;
 
   constructor(private http: HttpClient) {}
 
@@ -62,6 +66,10 @@ export class DocumentService {
 
   updateTags(id: number, tags: string[]): Observable<Document> {
     return this.http.put<Document>(`${this.apiUrl}/${id}/tags`, { tags });
+  }
+
+  reprocessDocument(id: number): Observable<Document> {
+    return this.http.post<Document>(`${this.apiUrl}/${id}/reprocess`, {});
   }
 
   askDocumentQuestion(id: number, question: string): Observable<ChatResponse> {

@@ -41,7 +41,7 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly env = inject(ENVIRONMENT_TOKEN, { optional: true });
 
-  private readonly apiUrl: string = this.env?.apiUrl ?? 'http://localhost:8000/api/v1/auth';
+  private readonly apiUrl: string = `${this.env?.apiUrl ?? 'http://localhost:8000/api/v1'}/auth`;
 
   private userLoaded$: Observable<boolean> | undefined;
 

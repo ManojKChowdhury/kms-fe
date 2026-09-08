@@ -63,7 +63,8 @@ export class WebSocketService implements OnDestroy {
     if (!token) return;
 
     // NOTE: token travels in the query string; server/proxy access logs may capture it.
-    const wsUrl = this.env?.wsUrl ?? 'ws://localhost:8000/api/v1/ws';
+    const baseWsUrl = this.env?.wsUrl ?? 'ws://localhost:8000/api/v1/ws';
+    const wsUrl = `${baseWsUrl}?token=${encodeURIComponent(token)}`;
 
     this.socket$ = webSocket<WebSocketMessage>({
       url: wsUrl,

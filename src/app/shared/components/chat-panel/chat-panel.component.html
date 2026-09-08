@@ -21,9 +21,14 @@
                       class="citation-item-link"
                       [title]="'Score: ' + src.similarity_score"
                     >
-                      📄 {{ src.document_title }} · Chunk #{{ src.chunk_index }}
+                      📄 {{ src.document_title }}
+                      @if (src.page_number) { · Page {{ src.page_number }} }
+                      · Chunk #{{ src.chunk_index }}
                       ({{ src.similarity_score * 100 | number: '1.0-1' }}% Match)
                     </a>
+                    @if (src.excerpt) {
+                      <span class="citation-excerpt">{{ src.excerpt }}</span>
+                    }
                   } @else {
                     <span
                       class="citation-item"

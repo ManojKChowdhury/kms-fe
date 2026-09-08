@@ -6,6 +6,9 @@
       <span>← Back to Documents</span>
     </a>
     <div class="actions-right">
+      @if (doc()?.status === 'failed') {
+        <button class="btn btn-secondary" (click)="reprocessDocument()">Retry processing</button>
+      }
       <button class="btn btn-danger" (click)="deleteDocument()" [disabled]="isDeleting()">
         {{ isDeleting() ? 'Deleting...' : '🗑️ Delete Document' }}
       </button>

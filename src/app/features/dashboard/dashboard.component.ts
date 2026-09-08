@@ -7,6 +7,8 @@ import {
   Subscription,
   debounceTime,
   distinctUntilChanged,
+  filter,
+  timer,
   switchMap,
   tap,
 } from 'rxjs';
@@ -77,6 +79,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
     });
     this.subs.add(wsSub);
+
+    // Workers run outside the API process, so polling is the durable fallback
+    // when an in-memory WebSocket notification is unavailable. Only poll while
+    // documents are still being processed to avoid needless network traffic.
+    this.subs.add(
+      timer(5000, 5000)
+        .pipe(
+          filter(() => this.processingCount() > 0),
+          switchMap(() => this.docService.getDocuments(this.searchQuery)),
+        )
+        .subscribe((docs) => this.documents.set(docs)),
+    );
   }
 
   ngOnDestroy() {
@@ -89,6 +103,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   onSearchChange(term: string) {
     this.searchQuery = term;
+    this.searchSubject.next(term);
   }
 
   // --- Drag and Drop File Handlers ---
